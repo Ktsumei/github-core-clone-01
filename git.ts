@@ -172,10 +172,15 @@ function closure(roots: string[], depth: number | null): Set<string> {
 /** All objects under a tree (the tree itself + subtrees + blobs). */
 function walkTree(treeSha: string): Set<string> {
   const out = new Set<string>();
+  // NB: "expanded" must be tracked separately from `out`: a subtree is added
+  // to `out` as its parent's entry before it is ever expanded, so testing
+  // `out.has(sha)` here would skip expanding it and lose every blob below it.
+  const expanded = new Set<string>();
   const stack = [treeSha];
   while (stack.length > 0) {
     const sha = stack.pop()!;
-    if (out.has(sha)) continue;
+    if (expanded.has(sha)) continue;
+    expanded.add(sha);
     const obj = store.getObject(sha);
     if (!obj || obj.type !== 'tree') continue;
     out.add(sha);
